@@ -10,22 +10,34 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
-    public Text ScoreText;
+    public Text ScoreText;         // Displays the current score
+    public Text HighScoreText;    // Reference to ScoreText(1)
     public GameObject GameOverText;
-    
+
     private bool m_Started = false;
     private int m_Points;
-    
-    private bool m_GameOver = false;
 
-    
-    // Start is called before the first frame update
+    private bool m_GameOver = false;
+    private string bestPlayerName = "";
+    private int bestScore = 0;
+
     void Start()
     {
+        // Load the highest score and player name from PlayerPrefs
+        if (PlayerPrefs.HasKey("HighScore"))
+        {
+            bestScore = PlayerPrefs.GetInt("HighScore");
+            bestPlayerName = PlayerPrefs.GetString("HighScorePlayer");
+        }
+        string playerName = PlayerData.Instance.GetPlayerName();
+        ScoreText.text = $"Score: {playerName} : {m_Points}";
+
+        UpdateHighScoreText();
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
-        
-        int[] pointCountArray = new [] {1,1,2,2,5,5};
+
+        int[] pointCountArray = new[] { 1, 1, 2, 2, 5, 5 };
         for (int i = 0; i < LineCount; ++i)
         {
             for (int x = 0; x < perLine; ++x)
@@ -64,13 +76,33 @@ public class MainManager : MonoBehaviour
 
     void AddPoint(int point)
     {
+        string playerName = PlayerData.Instance.GetPlayerName();
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        ScoreText.text = $"Score {playerName}: {m_Points}";
     }
 
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        // Check if the current score is the highest score
+        if (m_Points > bestScore)
+        {
+            bestScore = m_Points;
+            bestPlayerName = PlayerData.Instance.GetPlayerName();
+
+            // Save the new high score and player name
+            PlayerPrefs.SetInt("HighScore", bestScore);
+            PlayerPrefs.SetString("HighScorePlayer", bestPlayerName);
+            PlayerPrefs.Save();
+        }
+
+        UpdateHighScoreText();
+    }
+
+    private void UpdateHighScoreText()
+    {
+        HighScoreText.text = $"Best Score: {bestPlayerName} : {bestScore}";
     }
 }
